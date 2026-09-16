@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Risk Radar · CSE274</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --card: #13131c;
+      --card2: #16161f;
+      --border: rgba(255,255,255,0.07);
+      --accent: #6ee7b7;
+      --accent2: #818cf8;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --text: #e5e7f0;
+      --muted: #6b7280;
+      --radius: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(110,231,183,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(129,140,248,0.05) 0%, transparent 60%);
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(10,10,15,0.88);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px; display: grid; place-items: center; font-size: 17px;
+    }
+    .logo-text { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em; }
+    .logo-sub { font-family:'DM Mono',monospace; font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+    .badge {
+      font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--accent);
+      border:1px solid rgba(110,231,183,0.25); padding:4px 12px; border-radius:999px;
+      background:rgba(110,231,183,0.06); letter-spacing:0.05em;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 4px;
+      padding: 6px; background: var(--card); border-radius: 12px;
+      width: fit-content; margin: 28px auto 0;
+    }
+    .tab {
+      padding: 9px 22px; border-radius: 9px; border: none;
+      font-family:'DM Sans',sans-serif; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; color: var(--muted); background: transparent;
+      transition: all 0.2s;
+    }
+    .tab.active { background: var(--card2); color: var(--text); box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+
+    /* ── Layout ── */
+    main { max-width: 1120px; margin: 0 auto; padding: 36px 24px 80px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .hero { text-align: center; margin-bottom: 48px; }
+    .hero h1 {
+      font-family:'Syne',sans-serif; font-size:clamp(2rem,4.5vw,3.4rem);
+      font-weight:800; letter-spacing:-0.04em; line-height:1.05; margin-bottom:12px;
+    }
+    .hero h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p { color:var(--muted); font-size:1rem; max-width:480px; margin:0 auto; line-height:1.6; }
+
+    /* ── Grid ── */
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media(max-width:740px){ .grid2{ grid-template-columns:1fr; } }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 26px;
+    }
+    .card-title {
+      font-family:'Syne',sans-serif; font-size:0.75rem; font-weight:700;
+      letter-spacing:0.12em; text-transform:uppercase; color:var(--muted);
+      margin-bottom:20px; display:flex; align-items:center; gap:8px;
+    }
+    .card-title::before { content:''; display:block; width:16px; height:2px; background:var(--accent); border-radius:2px; }
+
+    /* ── Fields ── */
+    .field { margin-bottom:16px; }
+    label { display:block; font-size:0.76rem; font-weight:500; color:var(--muted); margin-bottom:6px; letter-spacing:0.03em; }
+    input[type=range] {
+      -webkit-appearance:none; width:100%; height:4px;
+      background:rgba(255,255,255,0.1); border-radius:2px; outline:none; cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none; width:15px; height:15px;
+      background:var(--accent); border-radius:50%; box-shadow:0 0 8px rgba(110,231,183,0.45);
+    }
+    .range-row { display:flex; align-items:center; gap:10px; }
+    .range-val { font-family:'DM Mono',monospace; font-size:0.88rem; color:var(--accent); min-width:38px; text-align:right; }
+    select {
+      width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+      color:var(--text); padding:9px 14px; border-radius:10px;
+      font-family:'DM Sans',sans-serif; font-size:0.88rem; outline:none; cursor:pointer;
+      appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center;
+    }
+    select:focus { border-color:rgba(110,231,183,0.4); }
+
+    /* ── Button ── */
+    .btn-predict {
+      width:100%; padding:15px;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border:none; border-radius:var(--radius); color:#0a0a0f;
+      font-family:'Syne',sans-serif; font-size:0.95rem; font-weight:700;
+      letter-spacing:0.04em; cursor:pointer; margin-top:8px;
+      transition:opacity 0.2s, transform 0.15s;
+    }
+    .btn-predict:hover { opacity:0.9; transform:translateY(-1px); }
+    .btn-predict:active { transform:translateY(0); }
+
+    /* ── Results ── */
+    .result-panel { grid-column:1/-1; display:none; }
+    .result-panel.visible { display:block; }
+    .result-inner { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    @media(max-width:740px){ .result-inner{ grid-template-columns:1fr; } }
+
+    .risk-pct { font-family:'DM Mono',monospace; font-size:2.6rem; font-weight:500; line-height:1; }
+    .risk-pct.red    { color:var(--danger); }
+    .risk-pct.orange { color:var(--warn); }
+    .risk-pct.green  { color:var(--accent); }
+
+    .risk-label { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-0.02em; }
+    .risk-label.red    { color:var(--danger); }
+    .risk-label.orange { color:var(--warn); }
+    .risk-label.green  { color:var(--accent); }
+
+    .progress-track { background:rgba(255,255,255,0.07); border-radius:999px; height:7px; overflow:hidden; margin-top:14px; }
+    .progress-fill { height:100%; border-radius:999px; transition:width 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .progress-fill.red    { background:linear-gradient(90deg,#f87171,#ef4444); }
+    .progress-fill.orange { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+    .progress-fill.green  { background:linear-gradient(90deg,#6ee7b7,#34d399); }
+
+    .hours-big { font-family:'Syne',sans-serif; font-size:3.2rem; font-weight:800; color:var(--accent2); line-height:1; }
+    .hours-breakdown { margin-top:12px; font-size:0.8rem; color:var(--muted); line-height:1.8; font-family:'DM Mono',monospace; }
+    .tips-list { list-style:none; }
+    .tips-list li { padding:9px 0; border-bottom:1px solid var(--border); font-size:0.86rem; line-height:1.5; }
+    .tips-list li:last-child { border-bottom:none; }
+
+    .loader { display:none; text-align:center; padding:20px; color:var(--muted); font-family:'DM Mono',monospace; font-size:0.84rem; }
+    .loader.active { display:block; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .loader span { animation:pulse 1.2s infinite; }
+
+    /* ── Plots page ── */
+    .plots-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media(max-width:700px){ .plots-grid{ grid-template-columns:1fr; } }
+
+    .plot-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:20px;
+    }
+    .plot-card h3 {
+      font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700;
+      letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);
+      margin-bottom:14px;
+    }
+    .plot-card img { width:100%; border-radius:10px; display:block; }
+    .plot-card p { font-size:0.8rem; color:var(--muted); margin-top:10px; line-height:1.5; }
+
+    .plot-tabs { display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap; }
+    .plot-tab {
+      padding:6px 16px; border-radius:8px; border:1px solid var(--border);
+      font-size:0.78rem; cursor:pointer; color:var(--muted); background:transparent;
+      font-family:'DM Mono',monospace; transition:all 0.18s;
+    }
+    .plot-tab.active { border-color:rgba(110,231,183,0.4); color:var(--accent); background:rgba(110,231,183,0.07); }
+
+    /* ── Stats strip ── */
+    .stats-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+    @media(max-width:700px){ .stats-strip{ grid-template-columns:1fr 1fr; } }
+    .stat {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:12px; padding:18px 20px;
+    }
+    .stat-val { font-family:'DM Mono',monospace; font-size:1.6rem; font-weight:500; color:var(--accent); }
+    .stat-lbl { font-size:0.72rem; color:var(--muted); margin-top:4px; letter-spacing:0.04em; }
+
+    /* ── Model comparison table ── */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    th { text-align:left; padding:10px 14px; font-family:'Syne',sans-serif; font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); }
+    td { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.04); }
+    tr:hover td { background:rgba(255,255,255,0.02); }
+    tr:last-child td { border-bottom:none; }
+    .best-row td { color:var(--accent); }
+    .chip {
+      display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.72rem;
+      font-family:'DM Mono',monospace;
+    }
+    .chip.high { background:rgba(248,113,113,0.15); color:var(--danger); }
+    .chip.med  { background:rgba(251,191,36,0.15);  color:var(--warn); }
+    .chip.low  { background:rgba(110,231,183,0.15); color:var(--accent); }
+    .auc-bar {
+      height:6px; border-radius:3px;
+      background:linear-gradient(90deg,var(--accent2),var(--accent));
+      margin-top:4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎯</div>
+    <div>
+      <div class="logo-text">Student Risk Radar</div>
+      <div class="logo-sub">CSE274 · Applied ML</div>
+    </div>
+  </div>
+  <div class="badge">RF · AUC 0.965 · 6607 students</div>
+</header>
+
+<div style="max-width:1120px;margin:0 auto;padding:0 24px;">
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('predict',this)">⚡ Predict</button>
+    <button class="tab" onclick="showPage('plots',this)">📊 EDA & Plots</button>
+    <button class="tab" onclick="showPage('models',this)">🏆 Model Comparison</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- ═══════════ PAGE: PREDICT ═══════════ -->
+  <div class="page active" id="page-predict">
+    <div class="hero">
+      <h1>Predict Academic<br/><span>Risk in Seconds</span></h1>
+      <p>Enter student details — the ML model will assess risk and recommend a personalized study plan.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Academic Factors</div>
+
+        <div class="field"><label>Hours Studied / Week</label>
+          <div class="range-row">
+            <input type="range" id="Hours_Studied" min="1" max="44" value="20"
+              oninput="rv('v_hours',this.value)">
+            <span class="range-val" id="v_hours">20</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Attendance (%)</label>
+          <div class="range-row">
+            <input type="range" id="Attendance" min="60" max="100" value="80"
+              oninput="rv('v_att',this.value+'%')">
+            <span class="range-val" id="v_att">80%</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Previous Exam Score</label>
+          <div class="range-row">
+            <input type="range" id="Previous_Scores" min="40" max="100" value="65"
+              oninput="rv('v_prev',this.value)">
+            <span class="range-val" id="v_prev">65</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Tutoring Sessions / Month</label>
+          <div class="range-row">
+            <input type="range" id="Tutoring_Sessions" min="0" max="8" value="1"
+              oninput="rv('v_tut',this.value)">
+            <span class="range-val" id="v_tut">1</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Sleep Hours / Night</label>
+          <div class="range-row">
+            <input type="range" id="Sleep_Hours" min="4" max="10" value="7"
+              oninput="rv('v_sleep',this.value)">
+            <span class="range-val" id="v_sleep">7</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Physical Activity (days/week)</label>
+          <div class="range-row">
+            <input type="range" id="Physical_Activity" min="0" max="6" value="2"
+              oninput="rv('v_phy',this.value)">
+            <span class="range-val" id="v_phy">2</span>
+          </div>
+        </div>
+
+        <div class="field"><label>Motivation Level</label><select id="Motivation_Level"></select></div>
+        <div class="field"><label>Extracurricular Activities</label><select id="Extracurricular_Activities"></select></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Background & Environment</div>
+        <div class="field"><label>Gender</label><select id="Gender"></select></div>
+        <div class="field"><label>Family Income Level</label><select id="Family_Income"></select></div>
+        <div class="field"><label>Parental Involvement</label><select id="Parental_Involvement"></select></div>
+        <div class="field"><label>Parental Education Level</label><select id="Parental_Education_Level"></select></div>
+        <div class="field"><label>Access to Resources</label><select id="Access_to_Resources"></select></div>
+        <div class="field"><label>Teacher Quality</label><select id="Teacher_Quality"></select></div>
+        <div class="field"><label>Distance to School</label><select id="Distance_to_School"></select></div>
+        <button class="btn-predict" onclick="predict()">⚡ Analyze Risk</button>
+      </div>
+
+      <div class="result-panel card" id="resultPanel">
+        <div class="card-title">Prediction Results</div>
+        <div class="loader" id="loader"><span>Analyzing student profile…</span></div>
+        <div class="result-inner" id="resultInner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: EDA PLOTS ═══════════ -->
+  <div class="page" id="page-plots">
+    <div class="hero">
+      <h1>Exploratory <span>Data Analysis</span></h1>
+      <p>Visual insights from the 6,607 student dataset.</p>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-val">6,607</div><div class="stat-lbl">Total Students</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--danger)">1,452</div><div class="stat-lbl">At-Risk (22%)</div></div>
+      <div class="stat"><div class="stat-val">15</div><div class="stat-lbl">Features Used</div></div>
+      <div class="stat"><div class="stat-val">67.2</div><div class="stat-lbl">Mean Exam Score</div></div>
+    </div>
+
+    <div class="plot-tabs">
+      <button class="plot-tab active" onclick="showPlotSet('overview',this)">Overview</button>
+      <button class="plot-tab" onclick="showPlotSet('model',this)">Model Evaluation</button>
+    </div>
+
+    <div id="plots-overview" class="plots-grid">
+      <div class="plot-card">
+        <h3>Class Distribution &amp; Score Histogram</h3>
+        <img src="/plots/eda_class_dist.png" alt="class distribution" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <p style="display:none;color:var(--danger)">⚠ Run <code>python eda.py</code> to generate this plot.</p>
+        <p>22% of students score below 65, marking them as at-risk. The score distribution is roughly normal centered around 67.</p>
+      </div>
+      <div class="plot-card">
+        <h3>Study Hours vs Attendance Scatter</h3>
+        <img src="/plots/eda_scatter.png" alt="scatter" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <p style="display:none;color:var(--danger)">⚠ Run <code>python eda.py</code> to generate this plot.</p>
+        <p>At-risk students (red) cluster in the low-hours, low-attendance region — confirming these are the most predictive features.</p>
+      </div>
+      <div class="plot-card">
+        <h3>Feature Distributions by Risk Status</h3>
+        <img src="/plots/eda_numerical.png" alt="numerical dist" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <p style="display:none;color:var(--danger)">⚠ Run <code>python eda.py</code> to generate this plot.</p>
+        <p>Clear separation visible in Hours Studied, Attendance, and Previous Scores between safe and at-risk groups.</p>
+      </div>
+      <div class="plot-card">
+        <h3>Risk Rate by Categorical Features</h3>
+        <img src="/plots/eda_categorical.png" alt="categorical" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <p style="display:none;color:var(--danger)">⚠ Run <code>python eda.py</code> to generate this plot.</p>
+        <p>Low motivation, low parental involvement, and low resource access all strongly correlate with higher academic risk.</p>
+      </div>
+      <div class="plot-card" style="grid-column:1/-1">
+        <h3>Correlation Heatmap</h3>
+        <img src="/plots/eda_correlation.png" alt="correlation" style="max-width:600px;margin:0 auto;display:block"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+        <p style="display:none;color:var(--danger)">⚠ Run <code>python eda.py</code> to generate this plot.</p>
+        <p style="text-align:center;margin-top:10px">Previous Scores and Attendance show the highest correlation with Exam Score.</p>
+      </div>
+    </div>
+
+    <div id="plots-model" class="plots-grid" style="display:none">
+      <div class="plot-card">
+        <h3>Confusion Matrix</h3>
+        <img src="/plots/confusion_matrix.png" alt="confusion matrix" onerror="this.style.display='none'"/>
+        <p>True Positives (correctly identified at-risk students) and False Negatives (missed at-risk students) are key metrics for this use case.</p>
+      </div>
+      <div class="plot-card">
+        <h3>ROC Curve (AUC = 0.965)</h3>
+        <img src="/plots/roc_curve.png" alt="roc curve" onerror="this.style.display='none'"/>
+        <p>The model achieves excellent discrimination between at-risk and safe students — ROC-AUC of 0.965 indicates near-perfect separability.</p>
+      </div>
+      <div class="plot-card">
+        <h3>Precision-Recall Curve</h3>
+        <img src="/plots/precision_recall.png" alt="pr curve" onerror="this.style.display='none'"/>
+        <p>Given the class imbalance (22% at-risk), Precision-Recall AUC is a more meaningful metric than accuracy alone.</p>
+      </div>
+      <div class="plot-card">
+        <h3>Feature Importance</h3>
+        <img src="/plots/feature_importance.png" alt="feature importance" onerror="this.style.display='none'"/>
+        <p>Previous Scores, Attendance, and Hours Studied are the top three predictors of academic risk — aligning with EDA findings.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE: MODEL COMPARISON ═══════════ -->
+  <div class="page" id="page-models">
+    <div class="hero">
+      <h1>Model <span>Comparison</span></h1>
+      <p>8 classifiers benchmarked on the same dataset — ROC-AUC, Accuracy, and F1-Score.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">All Models — Benchmark Results</div>
+      <div class="table-wrap">
+        <table id="model-table">
+          <thead>
+            <tr>
+              <th>Model</th><th>Unit (Syllabus)</th>
+              <th>Accuracy</th><th>ROC-AUC</th><th>F1-Score</th><th>Complexity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Logistic Regression</td><td>Unit III</td><td>88.43%</td>
+              <td><div>0.9594</div><div class="auc-bar" style="width:95.9%"></div></td>
+              <td>0.7727</td><td><span class="chip low">Low</span></td></tr>
+            <tr><td>Naive Bayes</td><td>Unit III</td><td>89.33%</td>
+              <td><div>0.9551</div><div class="auc-bar" style="width:95.5%"></div></td>
+              <td>0.7093</td><td><span class="chip low">Low</span></td></tr>
+            <tr><td>K-Nearest Neighbors</td><td>Unit III</td><td>86.46%</td>
+              <td><div>0.9036</div><div class="auc-bar" style="width:90.4%"></div></td>
+              <td>0.6247</td><td><span class="chip med">Medium</span></td></tr>
+            <tr><td>Decision Tree</td><td>Unit III</td><td>84.64%</td>
+              <td><div>0.8945</div><div class="auc-bar" style="width:89.5%"></div></td>
+              <td>0.7112</td><td><span class="chip low">Low</span></td></tr>
+            <tr><td>SVM</td><td>Unit III</td><td>91.45%</td>
+              <td><div>0.9747</div><div class="auc-bar" style="width:97.5%"></div></td>
+              <td>0.8248</td><td><span class="chip high">High</span></td></tr>
+            <tr><td>AdaBoost</td><td>Unit V</td><td>92.06%</td>
+              <td><div>0.9700</div><div class="auc-bar" style="width:97.0%"></div></td>
+              <td>0.8015</td><td><span class="chip med">Medium</span></td></tr>
+            <tr class="best-row" title="Final model used in app"><td>⭐ Random Forest</td><td>Unit V</td><td>90.47%</td>
+              <td><div>0.9624</div><div class="auc-bar" style="width:96.2%"></div></td>
+              <td>0.7828</td><td><span class="chip med">Medium</span></td></tr>
+            <tr><td>Gradient Boosting</td><td>Unit V</td><td>92.89%</td>
+              <td><div>0.9778</div><div class="auc-bar" style="width:97.8%"></div></td>
+              <td>0.8303</td><td><span class="chip high">High</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px;font-size:0.78rem;color:var(--muted)">
+        ⭐ Random Forest was chosen for the app — best balance of accuracy, interpretability, and training speed. Run <code style="color:var(--accent2)">python compare_models.py</code> to regenerate.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Model Comparison Chart</div>
+      <img src="/plots/model_comparison.png" alt="model comparison"
+        style="width:100%;border-radius:10px"
+        onerror="this.outerHTML='<p style=\'color:var(--danger);font-size:0.85rem\'>⚠ Run <code>python compare_models.py</code> first to generate this chart.</p>'"/>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Page switching ───────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Plot tab switching ───────────────────────────────────────────────────────
+function showPlotSet(name, btn) {
+  document.querySelectorAll('.plot-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('plots-overview').style.display = name === 'overview' ? 'grid' : 'none';
+  document.getElementById('plots-model').style.display   = name === 'model'    ? 'grid' : 'none';
+}
+
+// ── Range value helper ───────────────────────────────────────────────────────
+function rv(id, val) { document.getElementById(id).textContent = val; }
+
+// ── Load dropdown options ────────────────────────────────────────────────────
+async function loadOptions() {
+  try {
+    const res  = await fetch('/api/options');
+    const opts = await res.json();
+    for (const [col, values] of Object.entries(opts)) {
+      const el = document.getElementById(col);
+      if (!el) continue;
+      el.innerHTML = values.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+  } catch {
+    const fallbacks = {
+      Parental_Involvement: ['High','Low','Medium'],
+      Access_to_Resources: ['High','Low','Medium'],
+      Extracurricular_Activities: ['No','Yes'],
+      Motivation_Level: ['High','Low','Medium'],
+      Family_Income: ['High','Low','Medium'],
+      Teacher_Quality: ['High','Low','Medium'],
+      Parental_Education_Level: ["Bachelor's","College","High School","Postgraduate"],
+      Distance_to_School: ['Far','Moderate','Near'],
+      Gender: ['Female','Male']
+    };
+    for (const [col, vals] of Object.entries(fallbacks)) {
+      const el = document.getElementById(col);
+      if (el) el.innerHTML = vals.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+  }
+}
+
+// ── Predict ──────────────────────────────────────────────────────────────────
+async function predict() {
+  const ids = ['Hours_Studied','Attendance','Sleep_Hours','Previous_Scores',
+               'Tutoring_Sessions','Physical_Activity',
+               'Parental_Involvement','Access_to_Resources','Extracurricular_Activities',
+               'Motivation_Level','Family_Income','Teacher_Quality',
+               'Parental_Education_Level','Distance_to_School','Gender'];
+
+  const payload = {};
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    payload[id] = el.tagName === 'SELECT' ? el.value : parseFloat(el.value);
+  });
+
+  const panel = document.getElementById('resultPanel');
+  const loader = document.getElementById('loader');
+  const inner  = document.getElementById('resultInner');
+
+  panel.classList.add('visible');
+  loader.classList.add('active');
+  inner.innerHTML = '';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  try {
+    const res  = await fetch('/api/predict', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    loader.classList.remove('active');
+    renderResults(data);
+  } catch {
+    loader.classList.remove('active');
+    inner.innerHTML = `<p style="color:var(--danger);padding:10px">⚠ Cannot reach prediction server.<br>Make sure <code>python app.py</code> is running on port 5000.</p>`;
+  }
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(d) {
+  const inner = document.getElementById('resultInner');
+  const c     = d.color;
+  const pct   = d.risk_prob / 100;
+  const r = 70, cx = 80, cy = 90;
+  const start = Math.PI, end = start + pct * Math.PI;
+  const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
+  const x2 = cx + r * Math.cos(end),   y2 = cy + r * Math.sin(end);
+  const large  = pct > 0.5 ? 1 : 0;
+  const arcCol = c==='red' ? '#f87171' : c==='orange' ? '#fbbf24' : '#6ee7b7';
+  const dailyWkd = (d.weekly_hours / 5).toFixed(1);
+  const dailyWkn = Math.max(0, ((d.weekly_hours - dailyWkd*5)/2)).toFixed(1);
+
+  inner.innerHTML = `
+    <div class="card" style="background:rgba(255,255,255,0.02);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div class="card-title" style="justify-content:center">Risk Score</div>
+      <svg viewBox="0 0 160 100" style="width:150px;height:90px">
+        <path d="M10,90 A70,70 0 0,1 150,90" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2}" fill="none" stroke="${arcCol}" stroke-width="10" stroke-linecap="round"/>
+      </svg>
+      <div class="risk-pct ${c}">${d.risk_prob}%</div>
+      <div class="risk-label ${c}">${d.risk_level}</div>
+      <div style="font-size:0.75rem;color:var(--muted)">probability of academic risk</div>
+      <div class="progress-track" style="width:100%;max-width:180px">
+        <div class="progress-fill ${c}" style="width:${d.risk_prob}%"></div>
+      </div>
+    </div>
+
+    <div class="card" style="background:rgba(255,255,255,0.02)">
+      <div class="card-title">Study Recommendation</div>
+      <div style="display:flex;align-items:flex-end;gap:8px">
+        <div class="hours-big">${d.weekly_hours}</div>
+        <div style="padding-bottom:8px;color:var(--muted);font-size:0.95rem">hrs / week</div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">≈ ${(d.weekly_hours/7).toFixed(1)} hours every day</div>
+      <div class="hours-breakdown">
+        Mon–Fri &nbsp;: ${dailyWkd} hr/day<br/>
+        Sat–Sun &nbsp;: ${dailyWkn} hr/day<br/>
+        <br/>
+        💡 Pomodoro: 25 min + 5 min break<br/>
+        📅 Weekly revision on Sundays
+      </div>
+    </div>
+
+    <div class="card" style="background:rgba(255,255,255,0.02)">
+      <div class="card-title">Action Plan</div>
+      <ul class="tips-list">
+        ${d.tips.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+loadOptions();
+</script>
+</body>
+</html>
